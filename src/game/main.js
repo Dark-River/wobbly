@@ -1,14 +1,17 @@
 import { createWorld, getStructureBodies, getBallBodies, stepWorld } from './physics.js';
 import { initRenderer, render } from './renderer.js';
-import { loadPuzzle, createStructureFromPuzzle } from '../shared/puzzle-loader.js';
+import { loadPuzzle, createStructureFromPuzzle, settleAndReadback } from '../shared/puzzle-loader.js';
 
 const canvas = document.getElementById('game-canvas');
 initRenderer(canvas);
 
+let currentPuzzle = null;
+
 async function init() {
+  currentPuzzle = await loadPuzzle('/puzzles/tutorial.json');
   createWorld();
-  const puzzle = await loadPuzzle('/puzzles/tutorial.json');
-  createStructureFromPuzzle(puzzle);
+  createStructureFromPuzzle(currentPuzzle);
+  settleAndReadback(currentPuzzle);
   loop();
 }
 
