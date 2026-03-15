@@ -8,7 +8,9 @@ export const STONE_TYPES = {
     density: 2.5,
     friction: 0.7,
     restitution: 0.1,
-    color: '#7a6e5d',
+    colorTop: '#8a7d6d',
+    colorBottom: '#5c5246',
+    border: '#3d3630',
     label: 'wall',
   },
   slab: {
@@ -17,7 +19,9 @@ export const STONE_TYPES = {
     density: 2.0,
     friction: 0.6,
     restitution: 0.05,
-    color: '#8a7d6b',
+    colorTop: '#9e9180',
+    colorBottom: '#706656',
+    border: '#4a4238',
     label: 'slab',
   },
   block: {
@@ -26,7 +30,9 @@ export const STONE_TYPES = {
     density: 3.0,
     friction: 0.8,
     restitution: 0.05,
-    color: '#6b6155',
+    colorTop: '#706458',
+    colorBottom: '#4a4038',
+    border: '#332e28',
     label: 'block',
   },
   pillar: {
@@ -35,7 +41,9 @@ export const STONE_TYPES = {
     density: 2.2,
     friction: 0.65,
     restitution: 0.1,
-    color: '#9a8b78',
+    colorTop: '#a8997e',
+    colorBottom: '#7a6d5a',
+    border: '#4a4238',
     label: 'pillar',
   },
 };
