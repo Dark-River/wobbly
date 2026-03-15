@@ -2,21 +2,28 @@ import { createWorld, getStructureBodies, getBallBodies, stepWorld } from './phy
 import { initRenderer, render, toWorld } from './renderer.js';
 import { loadPuzzle, createStructureFromPuzzle, settleAndReadback } from '../shared/puzzle-loader.js';
 import { getLauncherState, setAnchor, startDrag, updateDrag, releaseDrag } from './launcher.js';
-import { getState, setState, STATES } from './state.js';
+import { getState, setState, STATES, advanceShot, setRoundOver, resetState } from './state.js';
+import {
+  SETTLE_VELOCITY_THRESHOLD,
+  SETTLE_FRAMES,
+  GROUND_Y,
+  CANVAS_WIDTH,
+  SCALE,
+} from '../shared/constants.js';
 
 const canvas = document.getElementById('game-canvas');
 initRenderer(canvas);
 
 let currentPuzzle = null;
+let quietFrames = 0; // frames where all bodies are below velocity threshold
+let currentBall = null; // the most recently launched ball
+
+// Store initial structure positions after settlement, for topple detection
+let initialStructurePositions = [];
 
 async function init() {
   currentPuzzle = await loadPuzzle('/puzzles/tutorial.json');
-  createWorld();
-  createStructureFromPuzzle(currentPuzzle);
-  settleAndReadback(currentPuzzle);
-
-  // Set launcher anchor from puzzle data
-  setAnchor(currentPuzzle.launcher.x, currentPuzzle.launcher.y);
+  loadLevel();
 
   // Mouse events
   canvas.addEventListener('mousedown', onMouseDown);
@@ -24,6 +31,22 @@ async function init() {
   canvas.addEventListener('mouseup', onMouseUp);
 
   loop();
+}
+
+function loadLevel() {
+  createWorld();
+  createStructureFromPuzzle(currentPuzzle);
+  settleAndReadback(currentPuzzle);
+
+  // Record settled positions for topple detection
+  initialStructurePositions = getStructureBodies().map(body => ({
+    x: body.getPosition().x,
+    y: body.getPosition().y,
+  }));
+
+  setAnchor(currentPuzzle.launcher.x, currentPuzzle.launcher.y);
+  currentBall = null;
+  quietFrames = 0;
 }
 
 function getWorldPos(e) {
@@ -35,6 +58,14 @@ function getWorldPos(e) {
 
 function onMouseDown(e) {
   const state = getState();
+
+  // Handle retry/restart clicks
+  if (state.current === STATES.ROUND_OVER || state.current === STATES.WIN) {
+    resetState();
+    loadLevel();
+    return;
+  }
+
   if (state.current !== STATES.AIMING) return;
 
   const pos = getWorldPos(e);
@@ -53,16 +84,121 @@ function onMouseUp(e) {
 
   const ball = releaseDrag();
   if (ball) {
+    currentBall = ball;
+    quietFrames = 0;
     setState(STATES.FLYING);
+  }
+}
+
+function getMaxBodySpeed() {
+  let maxSpeed = 0;
+  for (const body of getStructureBodies()) {
+    const v = body.getLinearVelocity();
+    const speed = Math.sqrt(v.x * v.x + v.y * v.y);
+    if (speed > maxSpeed) maxSpeed = speed;
+  }
+  for (const body of getBallBodies()) {
+    const v = body.getLinearVelocity();
+    const speed = Math.sqrt(v.x * v.x + v.y * v.y);
+    if (speed > maxSpeed) maxSpeed = speed;
+  }
+  return maxSpeed;
+}
+
+function checkTopple() {
+  // Any structure stone dropped below ground = topple
+  const bodies = getStructureBodies();
+  for (let i = 0; i < bodies.length; i++) {
+    const pos = bodies[i].getPosition();
+    if (pos.y < GROUND_Y - 0.5) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function checkBallOffScreen() {
+  if (!currentBall) return false;
+  const pos = currentBall.getPosition();
+  // Off the right/left side or below ground significantly
+  const worldHalfWidth = CANVAS_WIDTH / SCALE / 2 + 5; // some buffer
+  return pos.x > worldHalfWidth || pos.x < -worldHalfWidth || pos.y < GROUND_Y - 2;
+}
+
+function checkBallResult() {
+  if (!currentBall) return 'miss';
+  const pos = currentBall.getPosition();
+  // Ball at rest above ground = landed
+  if (pos.y > GROUND_Y + 0.3) {
+    return 'landed';
+  }
+  // Ball on or below ground = miss
+  return 'miss';
+}
+
+function updateSettling() {
+  // During FLYING: check if ball went off-screen (immediate miss)
+  const state = getState();
+
+  if (state.current === STATES.FLYING) {
+    if (checkBallOffScreen()) {
+      setRoundOver('miss');
+      return;
+    }
+
+    // Check for topple during flight
+    if (checkTopple()) {
+      setRoundOver('topple');
+      return;
+    }
+
+    // Transition to SETTLING when bodies slow down
+    const maxSpeed = getMaxBodySpeed();
+    if (maxSpeed < SETTLE_VELOCITY_THRESHOLD * 3) {
+      // Use a higher threshold for initial transition
+      setState(STATES.SETTLING);
+      quietFrames = 0;
+    }
+  }
+
+  if (state.current === STATES.SETTLING) {
+    // Check for topple during settling
+    if (checkTopple()) {
+      setRoundOver('topple');
+      return;
+    }
+
+    const maxSpeed = getMaxBodySpeed();
+    if (maxSpeed < SETTLE_VELOCITY_THRESHOLD) {
+      quietFrames++;
+    } else {
+      quietFrames = 0;
+      // If things got energetic again, go back to FLYING
+      if (maxSpeed > SETTLE_VELOCITY_THRESHOLD * 5) {
+        setState(STATES.FLYING);
+      }
+    }
+
+    // Settled — determine result
+    if (quietFrames >= SETTLE_FRAMES) {
+      const result = checkBallResult();
+      if (result === 'miss') {
+        setRoundOver('miss');
+      } else {
+        // Ball landed successfully — advance to next shot
+        advanceShot();
+      }
+    }
   }
 }
 
 function loop() {
   const state = getState();
 
-  // Only step physics when ball is in flight or settling
+  // Step physics when ball is in flight or settling
   if (state.current === STATES.FLYING || state.current === STATES.SETTLING) {
     stepWorld();
+    updateSettling();
   }
 
   render(getStructureBodies(), getBallBodies(), getLauncherState(), state);
