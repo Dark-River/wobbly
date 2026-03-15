@@ -1,4 +1,4 @@
-import { createWorld, getStructureBodies, getBallBodies, stepWorld } from './physics.js';
+import { createWorld, getStructureBodies, getBallBodies, stepWorld, applyContactDamping } from './physics.js';
 import { initRenderer, render, toWorld } from './renderer.js';
 import { loadPuzzle, createStructureFromPuzzle, settleAndReadback } from '../shared/puzzle-loader.js';
 import { getLauncherState, setAnchor, startDrag, updateDrag, releaseDrag } from './launcher.js';
@@ -11,6 +11,7 @@ import {
   CANVAS_HEIGHT,
   GROUND_MARGIN_PX,
   SCALE,
+  BALL_RADIUS,
 } from '../shared/constants.js';
 
 const canvas = document.getElementById('game-canvas');
@@ -18,6 +19,7 @@ initRenderer(canvas);
 
 let currentPuzzle = null;
 let quietFrames = 0; // frames where all bodies are below velocity threshold
+let flightFrames = 0; // total frames since ball launched (settling timeout)
 let currentBall = null; // the most recently launched ball
 
 // Store initial structure positions after settlement, for topple detection
@@ -88,6 +90,7 @@ function onMouseUp(e) {
   if (ball) {
     currentBall = ball;
     quietFrames = 0;
+    flightFrames = 0;
     setState(STATES.FLYING);
   }
 }
@@ -114,10 +117,9 @@ function checkTopple() {
     const initial = initialStructurePositions[i];
     // Fell below ground
     if (pos.y < GROUND_Y - 0.5) return true;
-    // Displaced significantly from starting position (tipped over, slid off, etc.)
-    const dx = pos.x - initial.x;
-    const dy = pos.y - initial.y;
-    if (dx * dx + dy * dy > 2.25) return true; // 1.5m displacement threshold
+    // Upper piece (wall/slab2/pillar) fell to ground level
+    // Ground-level pieces (blocks, base slab) have initial y < 1.0 and are excluded
+    if (initial.y > 1.0 && pos.y < 0.5) return true;
   }
   return false;
 }
@@ -134,8 +136,8 @@ function checkBallOffScreen() {
 function checkBallResult() {
   if (!currentBall) return 'miss';
   const pos = currentBall.getPosition();
-  // Ball at rest above ground = landed
-  if (pos.y > GROUND_Y + 0.3) {
+  // Ball must be above ground-resting height to count as landed on structure
+  if (pos.y > GROUND_Y + BALL_RADIUS + 0.15) {
     return 'landed';
   }
   // Ball on or below ground = miss
@@ -146,34 +148,24 @@ function updateSettling() {
   // During FLYING: check if ball went off-screen (immediate miss)
   const state = getState();
 
+  const MAX_FLIGHT_FRAMES = 600; // 10 seconds at 60fps — force settle if still going
+  flightFrames++;
+
   if (state.current === STATES.FLYING) {
     if (checkBallOffScreen()) {
       setRoundOver('miss');
       return;
     }
 
-    // Check for topple during flight
-    if (checkTopple()) {
-      setRoundOver('topple');
-      return;
-    }
-
     // Transition to SETTLING when bodies slow down
     const maxSpeed = getMaxBodySpeed();
     if (maxSpeed < SETTLE_VELOCITY_THRESHOLD * 3) {
-      // Use a higher threshold for initial transition
       setState(STATES.SETTLING);
       quietFrames = 0;
     }
   }
 
   if (state.current === STATES.SETTLING) {
-    // Check for topple during settling
-    if (checkTopple()) {
-      setRoundOver('topple');
-      return;
-    }
-
     const maxSpeed = getMaxBodySpeed();
     if (maxSpeed < SETTLE_VELOCITY_THRESHOLD) {
       quietFrames++;
@@ -185,14 +177,17 @@ function updateSettling() {
       }
     }
 
-    // Settled — determine result
-    if (quietFrames >= SETTLE_FRAMES) {
-      const result = checkBallResult();
-      if (result === 'miss') {
-        setRoundOver('miss');
+    // Settled (or timed out) — determine result
+    if (quietFrames >= SETTLE_FRAMES || flightFrames >= MAX_FLIGHT_FRAMES) {
+      if (checkTopple()) {
+        setRoundOver('topple');
       } else {
-        // Ball landed successfully — advance to next shot
-        advanceShot();
+        const result = checkBallResult();
+        if (result === 'miss') {
+          setRoundOver('miss');
+        } else {
+          advanceShot();
+        }
       }
     }
   }
@@ -204,6 +199,7 @@ function loop() {
   // Step physics when ball is in flight or settling
   if (state.current === STATES.FLYING || state.current === STATES.SETTLING) {
     stepWorld();
+    applyContactDamping();
     updateSettling();
   }
 

@@ -3,9 +3,12 @@
   "label": "Tutorial",
   "launcher": { "x": -10, "y": 1 },
   "structure": [
-    { "type": "wall", "x": 3, "y": 0.95 },
-    { "type": "wall", "x": 5.4, "y": 0.95 },
-    { "type": "slab", "x": 4.2, "y": 2.1 },
-    { "type": "block", "x": 4.2, "y": 2.8 }
+    { "type": "block",  "x": 2.5, "y": 0.55 },
+    { "type": "block",  "x": 7.5, "y": 0.55 },
+    { "type": "slab",   "x": 5.0, "y": 0.25 },
+    { "type": "wall",   "x": 4.8, "y": 1.35 },
+    { "type": "wall",   "x": 5.8, "y": 1.35 },
+    { "type": "slab",   "x": 5.3, "y": 2.45 },
+    { "type": "pillar", "x": 5.3, "y": 3.85 }
   ]
 }

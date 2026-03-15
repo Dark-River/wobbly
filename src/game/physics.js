@@ -71,7 +71,7 @@ export function addBallBody(x, y, vx, vy, radius) {
 
   body.createFixture(Circle(radius), {
     density: 1.5,
-    friction: 0.5,
+    friction: 0.8,
     restitution: 0.3,
   });
 
@@ -79,6 +79,14 @@ export function addBallBody(x, y, vx, vy, radius) {
   body.isBall = true;
   ballBodies.push(body);
   return body;
+}
+
+export function applyContactDamping() {
+  for (const ball of ballBodies) {
+    const hasContact = ball.getContactList() != null;
+    ball.setLinearDamping(hasContact ? 1.0 : 0);
+    ball.setAngularDamping(hasContact ? 1.0 : 0);
+  }
 }
 
 export function stepWorld(dt = 1 / 60) {
