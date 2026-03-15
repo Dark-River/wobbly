@@ -1,0 +1,11 @@
+{
+  "id": 1,
+  "label": "Tutorial",
+  "launcher": { "x": -10, "y": 1 },
+  "structure": [
+    { "type": "wall", "x": 3, "y": 0.9 },
+    { "type": "wall", "x": 5.4, "y": 0.9 },
+    { "type": "slab", "x": 4.2, "y": 2.0 },
+    { "type": "block", "x": 4.2, "y": 2.7 }
+  ]
+}
