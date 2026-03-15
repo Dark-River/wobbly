@@ -2,11 +2,12 @@ import planck from 'planck';
 import { GRAVITY } from '../shared/constants.js';
 import { STONE_TYPES } from '../shared/stone-types.js';
 
-const { World, Vec2, Edge, Box } = planck;
+const { World, Vec2, Edge, Box, Circle } = planck;
 
 let world = null;
 let groundBody = null;
 const structureBodies = [];
+const ballBodies = [];
 
 export function createWorld() {
   world = new World({ gravity: Vec2(0, GRAVITY) });
@@ -18,6 +19,7 @@ export function createWorld() {
   });
 
   structureBodies.length = 0;
+  ballBodies.length = 0;
   return world;
 }
 
@@ -27,6 +29,7 @@ export function destroyWorld() {
     world = null;
     groundBody = null;
     structureBodies.length = 0;
+    ballBodies.length = 0;
   }
 }
 
@@ -36,6 +39,10 @@ export function getWorld() {
 
 export function getStructureBodies() {
   return structureBodies;
+}
+
+export function getBallBodies() {
+  return ballBodies;
 }
 
 export function addStoneBody(typeName, x, y, angle = 0) {
@@ -64,7 +71,7 @@ export function addBallBody(x, y, vx, vy, radius) {
     bullet: true,
   });
 
-  body.createFixture(planck.Circle(radius), {
+  body.createFixture(Circle(radius), {
     density: 1.5,
     friction: 0.5,
     restitution: 0.3,
@@ -72,11 +79,12 @@ export function addBallBody(x, y, vx, vy, radius) {
 
   body.setLinearVelocity(Vec2(vx, vy));
   body.isBall = true;
+  ballBodies.push(body);
   return body;
 }
 
 export function stepWorld(dt = 1 / 60) {
   if (world) {
-    world.step(dt);
+    world.step(dt, 8, 3);
   }
 }

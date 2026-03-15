@@ -1,11 +1,9 @@
-import { createWorld, getStructureBodies, stepWorld } from './physics.js';
+import { createWorld, getStructureBodies, getBallBodies, stepWorld } from './physics.js';
 import { initRenderer, render } from './renderer.js';
 import { loadPuzzle, createStructureFromPuzzle } from '../shared/puzzle-loader.js';
 
 const canvas = document.getElementById('game-canvas');
 initRenderer(canvas);
-
-const ballBodies = [];
 
 async function init() {
   createWorld();
@@ -15,11 +13,9 @@ async function init() {
 }
 
 function loop() {
-  // Step physics (for now, always step so we can see gravity work on test bodies)
   stepWorld();
-
-  render(getStructureBodies(), ballBodies, null, null);
+  render(getStructureBodies(), getBallBodies(), null, null);
   requestAnimationFrame(loop);
 }
 
-init();
+init().catch(err => console.error('Failed to initialize:', err));

@@ -1,4 +1,4 @@
-import { CANVAS_WIDTH, CANVAS_HEIGHT, SCALE, BALL_RADIUS } from '../shared/constants.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, SCALE, BALL_RADIUS, GROUND_MARGIN_PX } from '../shared/constants.js';
 import { STONE_TYPES } from '../shared/stone-types.js';
 
 let ctx = null;
@@ -14,7 +14,7 @@ export function initRenderer(canvas) {
 function toCanvas(wx, wy) {
   return {
     x: CANVAS_WIDTH / 2 + wx * SCALE,
-    y: CANVAS_HEIGHT - 60 - wy * SCALE,
+    y: CANVAS_HEIGHT - GROUND_MARGIN_PX - wy * SCALE,
   };
 }
 
@@ -26,7 +26,7 @@ export function getCanvasCoords(wx, wy) {
 export function toWorld(cx, cy) {
   return {
     x: (cx - CANVAS_WIDTH / 2) / SCALE,
-    y: (CANVAS_HEIGHT - 60 - cy) / SCALE,
+    y: (CANVAS_HEIGHT - GROUND_MARGIN_PX - cy) / SCALE,
   };
 }
 

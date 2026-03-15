@@ -2,8 +2,8 @@ import { addStoneBody } from '../game/physics.js';
 
 export async function loadPuzzle(path) {
   const response = await fetch(path);
-  const puzzle = await response.json();
-  return puzzle;
+  if (!response.ok) throw new Error(`Failed to load puzzle: ${path} (${response.status})`);
+  return response.json();
 }
 
 export function createStructureFromPuzzle(puzzle) {

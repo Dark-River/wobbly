@@ -9,6 +9,9 @@ export const GRAVITY = -20; // m/s² (negative = down in Planck's Y-up coords)
 // Ground position (in world meters, Y-up)
 export const GROUND_Y = 0;
 
+// Rendering
+export const GROUND_MARGIN_PX = 60; // pixels from bottom of canvas to ground line
+
 // Ball
 export const BALL_RADIUS = 0.4; // meters
 export const MAX_SHOTS = 5;
