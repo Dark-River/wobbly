@@ -1,5 +1,5 @@
 import { PRE_SETTLE_STEPS } from './constants.js';
-import { createWorld, addStoneBody, getStructureBodies, stepWorld, getWorld } from '../game/physics.js';
+import { createWorld, addStoneBody, getStructureBodies, stepWorld } from '../game/physics.js';
 
 export async function loadPuzzle(path) {
   const response = await fetch(path);

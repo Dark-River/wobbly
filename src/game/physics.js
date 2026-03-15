@@ -1,8 +1,6 @@
-import planck from 'planck';
+import { World, Vec2, Edge, Box, Circle } from 'planck';
 import { GRAVITY } from '../shared/constants.js';
 import { STONE_TYPES } from '../shared/stone-types.js';
-
-const { World, Vec2, Edge, Box, Circle } = planck;
 
 let world = null;
 let groundBody = null;

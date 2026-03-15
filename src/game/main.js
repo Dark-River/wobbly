@@ -1,7 +1,7 @@
 import { createWorld, getStructureBodies, getBallBodies, stepWorld } from './physics.js';
 import { initRenderer, render, toWorld } from './renderer.js';
 import { loadPuzzle, createStructureFromPuzzle, settleAndReadback } from '../shared/puzzle-loader.js';
-import { getlauncherState, setAnchor, startDrag, updateDrag, releaseDrag } from './launcher.js';
+import { getLauncherState, setAnchor, startDrag, updateDrag, releaseDrag } from './launcher.js';
 import { getState, setState, STATES } from './state.js';
 
 const canvas = document.getElementById('game-canvas');
@@ -42,6 +42,7 @@ function onMouseDown(e) {
 }
 
 function onMouseMove(e) {
+  if (getState().current !== STATES.AIMING) return;
   const pos = getWorldPos(e);
   updateDrag(pos.x, pos.y);
 }
@@ -64,7 +65,7 @@ function loop() {
     stepWorld();
   }
 
-  render(getStructureBodies(), getBallBodies(), getlauncherState(), state);
+  render(getStructureBodies(), getBallBodies(), getLauncherState(), state);
   requestAnimationFrame(loop);
 }
 

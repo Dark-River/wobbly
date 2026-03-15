@@ -10,7 +10,7 @@ const launcherState = {
   power: 0, // 0-1 normalized
 };
 
-export function getlauncherState() {
+export function getLauncherState() {
   return launcherState;
 }
 
