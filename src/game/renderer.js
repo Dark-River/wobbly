@@ -329,7 +329,7 @@ function drawHUD(gameState) {
       // Used shot — filled dim
       ctx.fillStyle = 'rgba(180, 50, 50, 0.5)';
       ctx.fill();
-    } else if (i === shotNumber && current === 'AIMING') {
+    } else if (i === shotNumber && (current === 'AIMING' || current === 'FLYING' || current === 'SETTLING')) {
       // Current shot — bright
       ctx.fillStyle = '#c44';
       ctx.fill();

@@ -8,6 +8,8 @@ import {
   SETTLE_FRAMES,
   GROUND_Y,
   CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+  GROUND_MARGIN_PX,
   SCALE,
 } from '../shared/constants.js';
 
@@ -106,13 +108,16 @@ function getMaxBodySpeed() {
 }
 
 function checkTopple() {
-  // Any structure stone dropped below ground = topple
   const bodies = getStructureBodies();
   for (let i = 0; i < bodies.length; i++) {
     const pos = bodies[i].getPosition();
-    if (pos.y < GROUND_Y - 0.5) {
-      return true;
-    }
+    const initial = initialStructurePositions[i];
+    // Fell below ground
+    if (pos.y < GROUND_Y - 0.5) return true;
+    // Displaced significantly from starting position (tipped over, slid off, etc.)
+    const dx = pos.x - initial.x;
+    const dy = pos.y - initial.y;
+    if (dx * dx + dy * dy > 2.25) return true; // 1.5m displacement threshold
   }
   return false;
 }
@@ -120,9 +125,10 @@ function checkTopple() {
 function checkBallOffScreen() {
   if (!currentBall) return false;
   const pos = currentBall.getPosition();
-  // Off the right/left side or below ground significantly
-  const worldHalfWidth = CANVAS_WIDTH / SCALE / 2 + 5; // some buffer
-  return pos.x > worldHalfWidth || pos.x < -worldHalfWidth || pos.y < GROUND_Y - 2;
+  const worldHalfWidth = CANVAS_WIDTH / SCALE / 2 + 5;
+  const worldTopY = (CANVAS_HEIGHT - GROUND_MARGIN_PX) / SCALE + 10;
+  return pos.x > worldHalfWidth || pos.x < -worldHalfWidth
+    || pos.y < GROUND_Y - 2 || pos.y > worldTopY;
 }
 
 function checkBallResult() {
